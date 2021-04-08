@@ -1,7 +1,13 @@
 <template>
   <div>
-    <Titulo texto="Aluno" />
-    <div>
+    <Titulo
+      :texto="
+        professorid != undefined
+          ? 'Professor: ' + professor.nome
+          : 'Todos os alunos'
+      "
+    />
+    <div v-if="professorid != undefined">
       <input
         type="text"
         placeholder="Nome do Aluno"
@@ -18,9 +24,10 @@
       </thead>
       <tbody v-if="alunos.length">
         <tr v-for="(aluno, index) in alunos" :key="index">
-          <td>{{ aluno.id }}</td>
-          <td>{{ aluno.nome }}</td>
-          <td>
+          <td class="colPequeno">{{ aluno.id }}</td>
+          <router-link :to="`/alunoDetalhe/${aluno.id}`" tag="td" style="cursor: pointer">{{ aluno.nome }} {{ aluno.sobrenome }}
+          </router-link>
+          <td class="colPequeno">
             <button class="btn btn_Danger" @click="remover(aluno)">
               Remover
             </button>
@@ -43,15 +50,26 @@ export default {
   },
   data() {
     return {
+      Titulo: "Alunos",
+      professorid: this.$route.params.prof_id,
+      professor: {},
       nome: "",
       alunos: [],
     };
   },
   created() {
-    this.$http
-      .get("http://localhost:3000/alunos")
-      .then((res) => res.json())
-      .then((alunos) => (this.alunos = alunos));
+    if (this.professorid) {
+      this.carregarProfessores();
+      this.$http
+        .get("http://localhost:3000/alunos?professor.id=" + this.professorid)
+        .then((res) => res.json())
+        .then((alunos) => (this.alunos = alunos));
+    } else {
+      this.$http
+        .get("http://localhost:3000/alunos")
+        .then((res) => res.json())
+        .then((alunos) => (this.alunos = alunos));
+    }
   },
   props: {},
   methods: {
@@ -59,6 +77,10 @@ export default {
       let _aluno = {
         nome: this.nome,
         sobrenome: "",
+        professor: {
+          id: this.professor.id,
+          nome: this.professor.nome,
+        },
       };
 
       this.$http
@@ -75,6 +97,14 @@ export default {
         this.alunos.splice(indice, 1);
       });
     },
+    carregarProfessores() {
+      this.$http
+        .get("http://localhost:3000/professores/" + this.professorid)
+        .then((res) => res.json())
+        .then((professor) => {
+          this.professor = professor;
+        });
+    },
   },
 };
 </script>
@@ -82,6 +112,7 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 input {
+  width: calc(100% - 195px);
   border: 0;
   padding: 20px;
   font-size: 1.3em;
@@ -95,6 +126,7 @@ input {
   font-size: 1.3em;
   display: inline;
   background-color: rgb(116, 115, 115);
+  width: 150px;
 }
 
 .btnInput:hover {
